@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HACKER WHATSAPP</title>
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#00ff88" />
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js");
+      }
+    </script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+      body {
+        height: 100vh;
+        background: #000 url("bg.jpg") center/cover no-repeat fixed;
+        display: flex;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        z-index: 0;
+      }
+      .app {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 450px;
+        height: 100vh;
+        background: rgba(11, 20, 26, 0.88);
+        display: flex;
+        flex-direction: column;
+      }
+      #loginScreen {
+        position: absolute;
+        inset: 0;
+        z-index: 99;
+        background: rgba(11, 20, 26, 0.97) url("bg.jpg") center/cover no-repeat;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+      }
+      #loginScreen::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(11, 20, 26, 0.9);
+        z-index: -1;
+      }
+      #loginScreen h1 {
+        color: #00ff88;
+        font-size: 30px;
+        margin-bottom: 30px;
+        text-shadow: 0 0 20px #00ff88;
+        z-index: 1;
+      }
+      .user-cards {
+        display: flex;
+        gap: 20px;
+        z-index: 1;
+      }
+      .card {
+        width: 135px;
+        height: 155px;
+        background: rgba(32, 44, 51, 0.9);
+        border: 2px solid #2a3942;
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .header {
+        height: 60px;
+        background: rgba(32, 44, 51, 0.95);
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #e9edef;
+      }
+      #pinnedBar {
+        display: none;
+        background: rgba(24, 34, 38, 0.95);
+        border-left: 4px solid #00ff88;
+        padding: 8px 12px;
+        color: #e9edef;
+        font-size: 12px;
+        position: relative;
+      }
+      .messages {
+        flex: 1;
+        overflow: auto;
+        padding: 12px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: transparent;
+      }
+      .bubble {
+        max-width: 78%;
+        padding: 6px 8px 4px 8px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        position: relative;
+      }
+      .me {
+        align-self: flex-start;
+        background: rgba(0, 92, 75, 0.9);
+        color: #e9edef;
+        border-top-left-radius: 0;
+      }
+      .other {
+        align-self: flex-end;
+        background: rgba(32, 44, 51, 0.9);
+        color: #e9edef;
+        border-top-right-radius: 0;
+      }
+      .bubble b {
+        font-size: 10px;
+        display: block;
+      }
+      .reply-box {
+        background: rgba(0, 0, 0, 0.4);
+        border-left: 3px solid #00ff88;
+        padding: 4px 6px;
+        border-radius: 4px;
+        margin-bottom: 4px;
+        font-size: 11px;
+      }
+      .meta {
+        display: flex;
+        justify-content: flex-end;
+        gap: 4px;
+        margin-top: 3px;
+      }
+      .time {
+        font-size: 10px;
+        color: #8696a0;
+      }
+      .ticks {
+        font-size: 12px;
+        color: #8696a0;
+      }
+      .ticks.read {
+        color: #53bdeb;
+      }
+      .react {
+        position: absolute;
+        bottom: -10px;
+        right: 6px;
+        background: #2a3942;
+        border-radius: 12px;
+        padding: 1px 6px;
+        font-size: 12px;
+      }
+      .voice-bubble {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 220px;
+      }
+      .play-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #00a884;
+        color: white;
+        border: none;
+      }
+      #typingIndicator {
+        display: none;
+        padding: 6px 16px;
+        font-size: 12px;
+        color: #00ff88;
+        background: rgba(0, 0, 0, 0.3);
+      }
+      #replyPreview {
+        display: none;
+        background: #182229;
+        border-left: 4px solid #00ff88;
+        padding: 8px 12px;
+        position: relative;
+      }
+      #replyPreview b {
+        color: #00ff88;
+        font-size: 12px;
+        display: block;
+      }
+      #replyPreview span {
+        color: #8696a0;
+        font-size: 12px;
+        display: block;
+        max-width: 90%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #closeReply {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+      }
+      #ctxMenu {
+        position: fixed;
+        z-index: 100;
+        display: none;
+        background: #233138;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+        width: 230px;
+      }
+      #emojiBar {
+        display: flex;
+        justify-content: space-around;
+        padding: 10px;
+        background: #182229;
+        border-bottom: 1px solid #2a3942;
+      }
+      #emojiBar span {
+        font-size: 22px;
+        cursor: pointer;
+      }
+      .ctxItem {
+        padding: 12px 16px;
+        display: flex;
+        gap: 12px;
+        color: #e9edef;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .ctxItem:hover {
+        background: #2a3942;
+      }
+      .input-area {
+        padding: 6px 10px;
+        background: rgba(32, 44, 51, 0.95);
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      .input-box {
+        flex: 1;
+        background: #2a3942;
+        border-radius: 22px;
+        display: flex;
+        padding: 6px 12px;
+        align-items: center;
+      }
+      .input-box input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #e9edef;
+        padding: 8px 0;
+      }
+      #voiceBtn,
+      #sendBtn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+      }
+      #voiceBtn {
+        background: #00a884;
+        color: white;
+      }
+      #sendBtn {
+        background: #00a884;
+        color: white;
+        display: none;
+      }
+      #recOverlay {
+        display: none;
+        flex: 1;
+        align-items: center;
+        gap: 10px;
+        color: #f15c6d;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        background: red;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="overlay"></div>
+    <div class="app">
+      <div id="loginScreen">
+        <h1>WHO ARE YOU?</h1>
+        <div class="user-cards">
+          <div class="card" onclick="login('كريم')">
+            <div
+              style="
+                width: 70px;
+                height: 70px;
+                border-radius: 50%;
+                background: #00a884;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 30px;
+                color: white;
+                margin-bottom: 10px;
+              "
+            >
+              K
+            </div>
+            <b>كريم</b>
+          </div>
+          <div class="card" onclick="login('احمد')">
+            <div
+              style="
+                width: 70px;
+                height: 70px;
+                border-radius: 50%;
+                background: #54656f;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 30px;
+                color: white;
+                margin-bottom: 10px;
+              "
+            >
+              A
+            </div>
+            <b>احمد</b>
+          </div>
+        </div>
+      </div>
+      <div class="header">
+        <div>
+          <div style="font-weight: 700">HACKER CHAT</div>
+          <small id="statusText">مشفر • متصل</small>
+        </div>
+        <div style="display: flex; align-items: center">
+          <b id="meName" style="color: #00ff88; margin-right: 8px"></b
+          ><button
+            onclick="logout()"
+            style="
+              background: #2a3942;
+              border: none;
+              color: #fff;
+              width: 30px;
+              height: 30px;
+              border-radius: 50%;
+            "
+          >
+            🔄
+          </button>
+        </div>
+      </div>
+      <div id="pinnedBar">
+        <b>📌 مثبتة</b><span id="pinnedText"></span
+        ><span id="unpin" onclick="unpin()">✖</span>
+      </div>
+      <div class="messages" id="msgs"></div>
+      <div id="typingIndicator">يكتب الآن...</div>
+      <div id="replyPreview">
+        <b id="replyWho"></b><span id="replyText"></span
+        ><span id="closeReply" onclick="cancelReply()">✖</span>
+      </div>
+      <div class="input-area">
+        <div class="input-box">
+          <div id="recOverlay">
+            <div class="dot"></div>
+            <span id="recTime">0:00</span>
+          </div>
+          <input id="txt" placeholder="Message" />
+        </div>
+        <button id="voiceBtn">🎙️</button><button id="sendBtn">➤</button>
+      </div>
+    </div>
+    <div id="ctxMenu">
+      <div id="emojiBar">
+        <span onclick="react('❤️')">❤️</span
+        ><span onclick="react('😂')">😂</span
+        ><span onclick="react('😮')">😮</span
+        ><span onclick="react('😢')">😢</span
+        ><span onclick="react('🙏')">🙏</span
+        ><span onclick="react('🔥')">🔥</span>
+      </div>
+      <div class="ctxItem" onclick="doReply()">↩️ رد</div>
+      <div class="ctxItem" onclick="doCopy()">📋 نسخ</div>
+      <div class="ctxItem" onclick="doForward()">↪️ إعادة توجيه</div>
+      <div class="ctxItem" onclick="doPin()">📌 تثبيت</div>
+      <div class="ctxItem" onclick="doDelete()" style="color: #f15c6d">
+        🗑️ مسح
+      </div>
+    </div>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        onValue,
+        remove,
+        update,
+      } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+      const firebaseConfig = {
+        apiKey: "AIzaSyDy6eUDmAAdSN9aYq6kbcBPVvIRqhPmz50",
+        authDomain: "hack1-cb0f2.firebaseapp.com",
+        databaseURL: "https://hack1-cb0f2-default-rtdb.firebaseio.com",
+        projectId: "hack1-cb0f2",
+        storageBucket: "hack1-cb0f2.firebasestorage.app",
+        messagingSenderId: "926645598259",
+        appId: "1:926645598259:web:eabe7d3f588ee0b26f0b46",
+      };
+      const appFB = initializeApp(firebaseConfig);
+      const db = getDatabase(appFB);
+      const chatRef = ref(db, "hacker_ultra_blue");
+      const pinRef = ref(db, "hacker_pinned_blue");
+      const typingRef = ref(db, "typing_status");
+      let myName = localStorage.getItem("hacker_name");
+      const loginScreen = document.getElementById("loginScreen");
+      window.login = (n) => {
+        myName = n;
+        localStorage.setItem("hacker_name", n);
+        loginScreen.style.display = "none";
+        document.getElementById("meName").innerText = n;
+        initChat();
+      };
+      window.logout = () => {
+        localStorage.removeItem("hacker_name");
+        location.reload();
+      };
+      if (myName) {
+        loginScreen.style.display = "none";
+        document.getElementById("meName").innerText = myName;
+      }
+      let selectedKey = null,
+        selectedData = null,
+        replyData = null;
+      const ctxMenu = document.getElementById("ctxMenu");
+      const msgsDiv = document.getElementById("msgs");
+      const replyPreview = document.getElementById("replyPreview");
+      const statusText = document.getElementById("statusText");
+      const typingIndicator = document.getElementById("typingIndicator");
+      function initChat() {
+        const txt = document.getElementById("txt");
+        const voiceBtn = document.getElementById("voiceBtn");
+        const sendBtn = document.getElementById("sendBtn");
+        let typingTimeout = null;
+        txt.addEventListener("input", () => {
+          if (txt.value.trim()) {
+            voiceBtn.style.display = "none";
+            sendBtn.style.display = "flex";
+          } else {
+            voiceBtn.style.display = "flex";
+            sendBtn.style.display = "none";
+          }
+          update(typingRef, { [myName]: true });
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            update(typingRef, { [myName]: false });
+          }, 1500);
+        });
+        onValue(typingRef, (snap) => {
+          const data = snap.val() || {};
+          const otherName = myName === "كريم" ? "احمد" : "كريم";
+          if (data[otherName]) {
+            typingIndicator.style.display = "block";
+            typingIndicator.innerText = `${otherName} يكتب الآن... ✍️`;
+            statusText.innerText = `${otherName} يكتب الآن...`;
+          } else {
+            typingIndicator.style.display = "none";
+            statusText.innerText = "مشفر • متصل";
+          }
+        });
+        onValue(chatRef, (snap) => {
+          msgsDiv.innerHTML = "";
+          let updates = {};
+          snap.forEach((child) => {
+            const d = child.val();
+            const key = child.key;
+            if (d.who !== myName && (!d.readBy || !d.readBy.includes(myName))) {
+              let newReadBy = d.readBy ? [...d.readBy, myName] : [myName];
+              updates[`${key}/readBy`] = newReadBy;
+              updates[`${key}/status`] = "read";
+            }
+            const timeStr = d.time
+              ? new Date(d.time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "";
+            let tickHTML = "",
+              tickClass = "";
+            if (d.who === myName) {
+              if (d.status === "read" || (d.readBy && d.readBy.length > 0)) {
+                tickHTML = "✓✓";
+                tickClass = "read";
+              } else {
+                tickHTML = "✓✓";
+              }
+              if (!d.readBy) {
+                tickHTML = "✓";
+              }
+            }
+            const div = document.createElement("div");
+            div.className = "bubble " + (d.who === myName ? "me" : "other");
+            let replyHTML = d.reply
+              ? `<div class="reply-box"><i>${d.reply.who}</i>${d.reply.text.slice(0, 60)}</div>`
+              : "";
+            let content =
+              d.type === "voice"
+                ? `<div class="voice-bubble"><button class="play-btn">▶</button><div>🎤 فويس</div></div><audio src="${d.text}"></audio>`
+                : `${d.text}`;
+            div.innerHTML = `${replyHTML}<b>${d.who}</b>${content}<div class="meta"><span class="time">${timeStr}</span>${d.who === myName ? `<span class="ticks ${tickClass}">${tickHTML}</span>` : ""}</div>${d.reaction ? `<div class="react">${d.reaction}</div>` : ""}`;
+            div.addEventListener("touchstart", (e) => {
+              window._lt = setTimeout(() => openMenu(e, key, d, div), 550);
+            });
+            div.addEventListener("touchend", () => clearTimeout(window._lt));
+            div.addEventListener("mousedown", (e) => {
+              window._lt = setTimeout(() => openMenu(e, key, d, div), 550);
+            });
+            div.addEventListener("mouseup", () => clearTimeout(window._lt));
+            div.addEventListener("contextmenu", (e) => {
+              e.preventDefault();
+              openMenu(e, key, d, div);
+            });
+            msgsDiv.appendChild(div);
+          });
+          if (Object.keys(updates).length > 0) {
+            update(chatRef, updates);
+          }
+          msgsDiv.querySelectorAll(".play-btn").forEach((btn) => {
+            const audio =
+              btn.parentElement.parentElement.querySelector("audio");
+            if (!audio) return;
+            btn.onclick = () => {
+              if (audio.paused) {
+                document.querySelectorAll("audio").forEach((a) => a.pause());
+                document
+                  .querySelectorAll(".play-btn")
+                  .forEach((b) => (b.innerText = "▶"));
+                audio.play();
+                btn.innerText = "⏸️";
+              } else {
+                audio.pause();
+                btn.innerText = "▶";
+              }
+            };
+          });
+          msgsDiv.scrollTop = msgsDiv.scrollHeight;
+        });
+        onValue(pinRef, (s) => {
+          const v = s.val();
+          if (v) {
+            document.getElementById("pinnedBar").style.display = "block";
+            document.getElementById("pinnedText").innerText = v.text.slice(
+              0,
+              50,
+            );
+          } else {
+            document.getElementById("pinnedBar").style.display = "none";
+          }
+        });
+        function sendText() {
+          if (!txt.value.trim()) return;
+          let payload = {
+            who: myName,
+            text: txt.value,
+            type: "text",
+            time: Date.now(),
+            status: "sent",
+            readBy: [],
+          };
+          if (replyData) {
+            payload.reply = { who: replyData.who, text: replyData.text };
+          }
+          push(chatRef, payload);
+          update(typingRef, { [myName]: false });
+          txt.value = "";
+          cancelReply();
+          voiceBtn.style.display = "flex";
+          sendBtn.style.display = "none";
+        }
+        sendBtn.onclick = sendText;
+        txt.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") sendText();
+        });
+        let mediaRecorder,
+          audioChunks = [],
+          isRecording = false,
+          recInterval,
+          sec = 0;
+        const recOverlay = document.getElementById("recOverlay");
+        const recTimeEl = document.getElementById("recTime");
+        voiceBtn.onclick = async () => {
+          if (!isRecording) {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
+            });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            sec = 0;
+            mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+              const blob = new Blob(audioChunks, { type: "audio/webm" });
+              const reader = new FileReader();
+              reader.readAsDataURL(blob);
+              reader.onloadend = () => {
+                let p = {
+                  who: myName,
+                  text: reader.result,
+                  type: "voice",
+                  time: Date.now(),
+                  status: "sent",
+                  readBy: [],
+                };
+                if (replyData) {
+                  p.reply = { who: replyData.who, text: replyData.text };
+                }
+                push(chatRef, p);
+                cancelReply();
+              };
+              stream.getTracks().forEach((t) => t.stop());
+            };
+            mediaRecorder.start();
+            isRecording = true;
+            voiceBtn.innerText = "■";
+            voiceBtn.style.background = "#f15c6d";
+            txt.style.display = "none";
+            recOverlay.style.display = "flex";
+            recInterval = setInterval(() => {
+              sec++;
+              recTimeEl.innerText = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+            }, 1000);
+          } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            voiceBtn.innerText = "🎙️";
+            voiceBtn.style.background = "#00a884";
+            txt.style.display = "block";
+            recOverlay.style.display = "none";
+            clearInterval(recInterval);
+          }
+        };
+      }
+      function openMenu(e, key, data, el) {
+        e.preventDefault();
+        selectedKey = key;
+        selectedData = data;
+        document
+          .querySelectorAll(".bubble")
+          .forEach((b) => b.classList.remove("selected"));
+        el.classList.add("selected");
+        ctxMenu.style.display = "block";
+        let x = e.touches ? e.touches[0].clientX : e.clientX;
+        let y = e.touches ? e.touches[0].clientY : e.clientY;
+        ctxMenu.style.left = Math.min(x, window.innerWidth - 240) + "px";
+        ctxMenu.style.top = Math.min(y, window.innerHeight - 340) + "px";
+      }
+      window.addEventListener("click", (e) => {
+        if (!ctxMenu.contains(e.target)) {
+          ctxMenu.style.display = "none";
+          document
+            .querySelectorAll(".bubble")
+            .forEach((b) => b.classList.remove("selected"));
+        }
+      });
+      window.cancelReply = () => {
+        replyData = null;
+        replyPreview.style.display = "none";
+      };
+      window.doReply = () => {
+        replyData = { who: selectedData.who, text: selectedData.text };
+        document.getElementById("replyWho").innerText = selectedData.who;
+        document.getElementById("replyText").innerText =
+          selectedData.text.slice(0, 80);
+        replyPreview.style.display = "block";
+        ctxMenu.style.display = "none";
+        document.getElementById("txt").focus();
+      };
+      window.react = (emoji) => {
+        update(ref(db, `hacker_ultra_blue/${selectedKey}`), {
+          reaction: emoji,
+        });
+        ctxMenu.style.display = "none";
+      };
+      window.doCopy = () => {
+        if (selectedData.type !== "voice") {
+          navigator.clipboard.writeText(selectedData.text);
+        }
+        ctxMenu.style.display = "none";
+      };
+      window.doForward = () => {
+        push(chatRef, {
+          who: myName,
+          text: `↪️ ${selectedData.text}`,
+          type: selectedData.type || "text",
+          time: Date.now(),
+          status: "sent",
+          readBy: [],
+        });
+        ctxMenu.style.display = "none";
+      };
+      window.doPin = () => {
+        update(pinRef, { text: selectedData.text, who: selectedData.who });
+        ctxMenu.style.display = "none";
+      };
+      window.unpin = () => remove(pinRef);
+      window.doDelete = () => {
+        if (confirm("مسح الرسالة؟"))
+          remove(ref(db, `hacker_ultra_blue/${selectedKey}`));
+        ctxMenu.style.display = "none";
+      };
+      if (myName) initChat();
+    </script>
+  </body>
+</html>
